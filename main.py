@@ -52,19 +52,14 @@ class SATSolver:
         print("FALSE = ", len(self._variables.false_values()))
         print("LENGTH RUlES = ", len(self._rules))
 
-
-        # for k,v in self._variables._variable_dict.items():
-        #      print(k,v )
-
-        # for rule in self._rules[1:]:
-        #     if len(rule)<14:
-        #         print(rule, self._variables._variable_dict[rule.split(" ")[0][1:]], self._variables._variable_dict[rule.split(" ")[1][1:]])
-
     def solve(self):
-        self._remove_true_lines(self._variables.true_values())
-        self._set_partner_value(self._variables.true_values(), 0)
-        #print("LENGTH = ", len(self._rules))
-        #self._remove_true_literals(self._variables.false_values())
+        while(True):
+            old_rules_ln = len(self._rules)
+            self._remove_true_lines(self._variables.true_values())
+            self._set_partner_value(self._variables.true_values(), 0)
+            self._remove_true_literals(self._variables.false_values())
+            if len(self._rules) == old_rules_ln:
+                break
 
 
     def _remove_true_lines(self, true_values: list):
@@ -74,10 +69,11 @@ class SATSolver:
                     self._rules.remove(rule)
 
     def _remove_true_literals(self, false_values: list):
+        # Go backwards
         for value in false_values:
-            for rule in self._rules:
-                if f"-{value}" in rule:
-                    self._rules.remove(rule)
+            for i in range(len(self._rules) - 1, -1, -1):
+                if f"-{value}" in self._rules[i]:
+                    del self._rules[i]
 
     def _set_partner_value(self, value_list: list, val: int):
         for rule in self._rules:
@@ -93,16 +89,6 @@ class SATSolver:
                         value=val
                     )
 
-    # def _set_partner_to_false(self, true_values: list):
-    #     for rule in self._rules:
-    #         for value in true_values:
-    #             true_value_idx = 0 if f"-{value}" in rule.split(" ")[0] else 1
-    #             print(true_value_idx, "-------", rule)
-    #             self._variables.set_value(
-    #                 key=rule.split(" ")[1 - true_value_idx][1:],
-    #                 value=0
-    #             )
-
     def _initialize_dict(self):
         keylist = [str(x) for x in range(111, 1000)]
 
@@ -113,10 +99,6 @@ class SATSolver:
     def _read_rules(self):
         with open(SUDOKU_RULES_FILENAME) as f:
             self._rules = f.readlines()
-
-
-def has_unit_clause(cnf):
-    pass
 
 
 SUDOKU_FILE = "sudoku-example.txt"
