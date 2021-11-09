@@ -51,7 +51,7 @@ class SATSolver:
 
         self.solve()
 
-    def DLIS(self):
+    def DLIS(self, run: int):
 
         # Save current dictionary and rules based on run
 
@@ -84,18 +84,31 @@ class SATSolver:
         print("TRUE\tFALSE\tRULES")
         print(len(self._variables.true_values()),"\t\t",len(self._variables.false_values()),"\t\t",len(self._rules), '\n')
 
-        while True:
+        run = 0
 
+        while True:
+            run += 1
             old_rules_ln = len(self._rules)
+
+            self._log_dict[run] = self._variables._variable_dict.copy()
+            self._log_rules[run] = self._rules.copy()
 
             self._remove_true_lines(self._variables.true_values())
             self._set_partner_value(self._variables.true_values(), 0)
             self._remove_true_literals(self._variables.false_values())
 
-            if len(self._rules) == old_rules_ln:
-                key, value = self.DLIS()
-                self._variables.set_value(key=key,value=value)
+            key, value = self.DLIS(run)
+            self._variables.set_value(key=key, value=value)
 
+            if len(self._rules) == old_rules_ln:
+                print("Failed")
+                run = run - 1
+                self._variables.variable_dict = self._log_dict[run]
+                self._rules = self._log_rules[run]
+                self._variables._variable_dict[self.last_updated_nr] = None
+                #break
+
+            print("Current Run:", run)
             print(len(self._variables.true_values()), "\t\t", len(self._variables.false_values()), "\t",len(self._rules), '\n')
 
     def _remove_true_lines(self, true_values: list):
