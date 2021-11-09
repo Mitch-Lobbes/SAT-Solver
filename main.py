@@ -1,8 +1,6 @@
 import numpy as np
-from pprint import pprint
+from collections import Counter
 
-
-# /Users/robinbux/anaconda3/envs/KR/bin/python solver.py
 
 class Variables:
 
@@ -17,6 +15,9 @@ class Variables:
 
     def false_values(self):
         return [key for (key, value) in self._variable_dict.items() if value == 0]
+
+    def none_values(self):
+        return [key for (key, value) in self._variable_dict.items() if value == None]
 
     def read_sudoku(self, filename: str):
         with open(filename) as f:
@@ -34,8 +35,10 @@ class SATSolver:
 
     def __init__(self, sudoku_filename: str):
         # Variables
-        self._variables: Variables
+        self._variables = Variables
         self._rules = []
+        self._pos_frequencies = Counter()
+        self._neg_frequencies = Counter()
 
         self._initialize_dict()
         self._read_rules()
@@ -48,19 +51,37 @@ class SATSolver:
 
         self.solve()
 
-        print("TRUE = ", len(self._variables.true_values()))
-        print("FALSE = ", len(self._variables.false_values()))
-        print("LENGTH RUlES = ", len(self._rules))
+    def DLIS(self):
+
+        for sentence in self._rules:
+            self._neg_frequencies.update(word.strip('.,?!"\'').lower() for word in sentence.split() if word != '0' and '-' in word)
+            self._pos_frequencies.update(word.strip('.,?!"\'').lower() for word in sentence.split() if word != '0' and '-' not in word)
+
+        highest_neg_nr = self._neg_frequencies.most_common(1)[0][0]
+        highest_neg_fre = self._neg_frequencies.most_common(1)[0][1]
+        highest_pos_nr = highest_neg_nr[1:]
+        highest_pos_fre = self._pos_frequencies[highest_pos_nr]
+
+        if highest_neg_fre > highest_pos_fre:
+            self._variables.set_value(key=highest_pos_nr,value=0)
+        elif highest_neg_fre < highest_pos_fre:
+            self._variables.set_value(key=highest_pos_nr,value=1)
 
     def solve(self):
+
         while(True):
             old_rules_ln = len(self._rules)
+            
             self._remove_true_lines(self._variables.true_values())
             self._set_partner_value(self._variables.true_values(), 0)
             self._remove_true_literals(self._variables.false_values())
+
             if len(self._rules) == old_rules_ln:
                 break
 
+            print("TRUE = ", len(self._variables.true_values()))
+            print("FALSE = ", len(self._variables.false_values()))
+            print("LENGTH RUlES = ", len(self._rules))
 
     def _remove_true_lines(self, true_values: list):
         for value in true_values:
@@ -71,9 +92,9 @@ class SATSolver:
     def _remove_true_literals(self, false_values: list):
         # Go backwards
         for value in false_values:
-            for i in range(len(self._rules) - 1, -1, -1):
-                if f"-{value}" in self._rules[i]:
-                    del self._rules[i]
+            for rule in reversed(self._rules):
+                if f"-{value}" in rule:
+                    self._rules.remove(rule)
 
     def _set_partner_value(self, value_list: list, val: int):
         for rule in self._rules:
@@ -98,7 +119,7 @@ class SATSolver:
 
     def _read_rules(self):
         with open(SUDOKU_RULES_FILENAME) as f:
-            self._rules = f.readlines()
+            self._rules = f.readlines()[1:]
 
 
 SUDOKU_FILE = "sudoku-example.txt"
