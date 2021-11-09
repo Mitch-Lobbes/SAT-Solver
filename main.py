@@ -39,19 +39,22 @@ class SATSolver:
         self._rules = []
         self._pos_frequencies = Counter()
         self._neg_frequencies = Counter()
+        self._log_dict = {}
+        self._log_rules = {}
+        self.tried = []
 
         self._initialize_dict()
         self._read_rules()
 
         self._variables.read_sudoku(filename=sudoku_filename)
 
-        print("TRUE = " ,len(self._variables.true_values()))
-        print("FALSE = ", len(self._variables. false_values()))
-        print("LENGTH RULES = ", len(self._rules))
-
         self.solve()
 
-    def DLIS(self):
+    def DLIS(self, run: int):
+
+        # Save current dictionary and rules based on run
+        self._log_dict[run] = self._variables._variable_dict
+        self._log_rules[run] = self._rules
 
         for sentence in self._rules:
             self._neg_frequencies.update(word.strip('.,?!"\'').lower() for word in sentence.split() if word != '0' and '-' in word)
@@ -62,26 +65,49 @@ class SATSolver:
         highest_pos_nr = highest_neg_nr[1:]
         highest_pos_fre = self._pos_frequencies[highest_pos_nr]
 
-        if highest_neg_fre > highest_pos_fre:
-            self._variables.set_value(key=highest_pos_nr,value=0)
-        elif highest_neg_fre < highest_pos_fre:
-            self._variables.set_value(key=highest_pos_nr,value=1)
+        if highest_pos_nr not in self.tried:
+            value = 1 if highest_pos_fre > highest_neg_fre else 0
+        else:
+            value = 0 if highest_pos_fre > highest_neg_fre else 1
+            del self._pos_frequencies[highest_pos_nr]
+            del self._neg_frequencies[highest_neg_nr]
+
+        print("Highest Connected Literal", highest_pos_nr,"Should be set to", value)
+
+        self.tried.append(highest_pos_nr)
+
+        return highest_pos_nr, value
 
     def solve(self):
 
-        while(True):
+        print("Start Sudoku Solver")
+        print("TRUE\tFALSE\tRULES")
+        print(len(self._variables.true_values()),"\t\t",len(self._variables.false_values()),"\t\t",len(self._rules), '\n')
+
+        run = 0
+
+        while True:
+            run += 1
             old_rules_ln = len(self._rules)
-            
+            self._log_dict[run] = self._variables._variable_dict
+            self._log_rules[run] = self._rules
+
             self._remove_true_lines(self._variables.true_values())
             self._set_partner_value(self._variables.true_values(), 0)
             self._remove_true_literals(self._variables.false_values())
 
-            if len(self._rules) == old_rules_ln:
-                break
+            key, value = self.DLIS(run)
+            self._variables.set_value(key=key, value=value)
 
-            print("TRUE = ", len(self._variables.true_values()))
-            print("FALSE = ", len(self._variables.false_values()))
-            print("LENGTH RUlES = ", len(self._rules))
+            if len(self._rules) == old_rules_ln:
+                print("Failed")
+                run = run - 1
+                self._variables.variable_dict = self._log_dict[run]
+                self._rules = self._rules
+                #break
+
+            print("Current Run:", run)
+            print(len(self._variables.true_values()), "\t\t", len(self._variables.false_values()), "\t",len(self._rules), '\n')
 
     def _remove_true_lines(self, true_values: list):
         for value in true_values:
