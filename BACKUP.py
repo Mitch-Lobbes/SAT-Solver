@@ -38,11 +38,9 @@ class SATSolver:
         self._variables = Variables
         self._rules = []
         self._pos_frequencies = Counter()
-        self._neg_frequencies = Counter()
         self._log_dict = {}
         self._log_rules = {}
-        self.tried = []
-        self.last_updated_nr = None
+        self._tried = []
 
         self._initialize_dict()
         self._read_rules()
@@ -51,32 +49,35 @@ class SATSolver:
 
         self.solve()
 
-    def DLIS(self, run: int):
+    def DLIS(self):
 
-        # Save current dictionary and rules based on run
+        self._pos_frequencies = {}
 
-        for sentence in self._rules:
-            self._neg_frequencies.update(word.strip('.,?!"\'').lower() for word in sentence.split() if word != '0' and '-' in word)
-            self._pos_frequencies.update(word.strip('.,?!"\'').lower() for word in sentence.split() if word != '0' and '-' not in word)
+        for unit in self._variables.none_values():
+            pos_counter = 0
+            neg_counter = 0
+            for rule in self._rules:
+                if unit in rule:
+                    pos_counter += 1
+                if f"-{unit}" in rule:
+                    neg_counter += 1
 
-        highest_neg_nr = self._neg_frequencies.most_common(1)[0][0]
-        highest_neg_fre = self._neg_frequencies.most_common(1)[0][1]
-        highest_pos_nr = highest_neg_nr[1:]
-        highest_pos_fre = self._pos_frequencies[highest_pos_nr]
+            pos_counter = pos_counter - neg_counter
+            self._pos_frequencies[unit] = (pos_counter, neg_counter)
 
-        if highest_pos_nr not in self.tried:
-            value = 1 if highest_pos_fre > highest_neg_fre else 0
+        highest_connections = max(self._pos_frequencies.values())
+        highest_variable = list(self._pos_frequencies.keys())[list(self._pos_frequencies.values()).index(highest_connections)]
+
+        if highest_variable not in self._tried:
+            value = 0 if highest_connections[0] < highest_connections[1] else 1
+            self._tried.append(highest_variable)
         else:
-            value = 0 if highest_pos_fre > highest_neg_fre else 1
-            del self._pos_frequencies[highest_pos_nr]
-            del self._neg_frequencies[highest_neg_nr]
+            value = 1 if highest_connections[0] < highest_connections[1] else 0
 
-        print("Highest Connected Literal", highest_pos_nr,"Should be set to", value)
 
-        self.tried.append(highest_pos_nr)
-        self.last_updated_nr = highest_pos_nr
+        print(highest_variable, value)
+        return highest_variable, value
 
-        return highest_pos_nr, value
 
     def solve(self):
 
@@ -97,18 +98,20 @@ class SATSolver:
             self._set_partner_value(self._variables.true_values(), 0)
             self._remove_true_literals(self._variables.false_values())
 
-            key, value = self.DLIS(run)
-            self._variables.set_value(key=key, value=value)
-
             if len(self._rules) == old_rules_ln:
-                print("Failed")
-                run = run - 1
-                self._variables.variable_dict = self._log_dict[run]
-                self._rules = self._log_rules[run]
-                self._variables._variable_dict[self.last_updated_nr] = None
-                #break
+                key, value = self.DLIS()
+                self._variables.set_value(key=key,value=value)
 
-            print("Current Run:", run)
+            if not self._variables.none_values() and self._rules:
+                print("Failed Attempt, Going to Backtrack")
+                run = run - 1
+                self._variables.variable_dict = self._log_dict[run].copy
+                self._rules = self._log_rules[run].copy
+
+            if not self._variables.none_values()  and not self._rules:
+                print("Succes")
+                break
+
             print(len(self._variables.true_values()), "\t\t", len(self._variables.false_values()), "\t",len(self._rules), '\n')
 
     def _remove_true_lines(self, true_values: list):
