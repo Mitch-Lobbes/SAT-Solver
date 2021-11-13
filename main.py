@@ -22,24 +22,34 @@ class SATSolver:
 
         backtrack = False
         backtrack_value = 0
-
+        id = 0
         while True:
 
             environment = Environment(
                 variables=variables,
-                rules=rules
+                rules=rules,
+                id=id
             ) if not backtrack else self._environments[-backtrack_value]
+            if not backtrack:
+                id = id + 1
 
-            self._environments.append(environment)
+            if not backtrack:
+                print("--------------------------------------")
+                print('New Environment Created')
+                self._environments.append(environment)
             signal, (variables, rules) = environment.run()
+            print(len(self._variables.true_values()), len(self._variables.false_values()), rules.get_length())
 
+            print(f"Signal: {signal}")
             if not signal:
-                for i in range (1, len(self._environments) + 1):
-                    if self._environments[-i]._flip_last_variable():
+                print("NOT SIGNAL")
+                for i in range (2, len(self._environments) + 1):
+                    if self._environments[-i].flip_last_variable():
                         backtrack = True
                         backtrack_value = i
+                        print('Backtracking....')
                         break
-            if not len(self._variables.none_values()) and not len(environment._initial_rules):
+            if not len(self._variables.none_values()) and not environment._initial_rules.get_length():
                 print('Everything is fine')
                 break
 

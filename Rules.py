@@ -79,6 +79,22 @@ class Rules:
                         # Remove the one literal
                         clause.remove_literal(variable=variable)
 
+    def rules_are_violated(self, variable: str, variables: dict) -> bool:
+        violation = True
+        for clause in self._clauses:
+            if clause.contains_variable(variable):
+                if len(clause.positive_variables()) > 0:
+                    for var in clause.positive_variables():
+                        if variables[var] == 1:
+                            violation = False
+                            break
+                if len(clause.negative_variables()) > 0:
+                    for var in clause.negative_variables():
+                        if variables[var] == 0:
+                            violation = False
+                            break
+        return violation
+
     def search_for_pure_literals(self):
         var_occurrence = self._count_variable_occurrences()
         pure_literals = {k: v for (k, v) in var_occurrence.items() if
