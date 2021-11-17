@@ -29,8 +29,8 @@ literals_added = []
 def dpll_2(rules: Rules, literal: str) -> bool:
     global idx
     global true_literals
-    print(f"-- New DPLL idx: {idx}")
-    idx = idx + 1
+    #print(f"-- New DPLL idx: {idx}")
+    #idx = idx + 1
 
     rules.remove_or_shorten_clauses_containing_literal(literal=literal)
 
@@ -57,10 +57,10 @@ def dpll_2(rules: Rules, literal: str) -> bool:
 
     if not rules.contains_clauses():
         true_literals.append(literal)
-        print("SULUTION FOUND")
+        #print("SULUTION FOUND")
         return True
     if rules.contains_empty_clauses():
-        print("RETURN FALSE IN EMPTY CLAUSE")
+        #print("RETURN FALSE IN EMPTY CLAUSE")
         # TODO: REMOVE fRoM TRUE unit
         for lit in unit_rule_literals:
             if '-' not in lit:
@@ -92,8 +92,6 @@ rules = Rules(filepath=SUDOKU_RULES_FILEPATH)
 
 for literal in sudoku:
     rules.remove_or_shorten_clauses_containing_literal(literal=literal)
-    # rules.remove_clause(literal)
-    # rules.shorten_clause(literal)
 
 rules.jerslow_wang_heuristic()
 
@@ -107,10 +105,10 @@ true_true_literals = set([lit for lit in true_literals if "-" not in lit])
 three_three_literals = set([lit for lit in true_literals if "-" not in lit and lit.startswith("33")])
 solution = list(true_true_literals) + sudoku
 
-print(solution)
-print(len(solution))
+#print(solution)
+#print(len(solution))
 print(result)
-
+"""
 s = int(max(solution)[0])
 size = (s, s)
 matrix = np.zeros(size)
@@ -122,3 +120,4 @@ for sol in solution:
     matrix[row][col] = num
 
 print(matrix)
+"""

@@ -23,7 +23,7 @@ class Rules:
                     variable = literal.replace("-", "")
                     self._literals.add(variable)
                     self._literals.add(f"-{variable}")
-            print(f"Length of variables: {len(self._literals)}")
+            #print(f"Length of variables: {len(self._literals)}")
 
     def remove_clause(self, literal: str) -> None:
         for clause in reversed(self._clauses):
