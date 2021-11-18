@@ -1,8 +1,10 @@
 import copy
-
-from helper import negate_literal
 from rules import Rules
 import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+from helper import negate_literal, plot_sudoku
 
 # 9x9
 # "sudoku-rules.txt"
@@ -29,8 +31,8 @@ literals_added = []
 def dpll_2(rules: Rules, literal: str) -> bool:
     global idx
     global true_literals
-    #print(f"-- New DPLL idx: {idx}")
-    #idx = idx + 1
+    print(f"-- New DPLL idx: {idx}")
+    idx = idx + 1
 
     rules.remove_or_shorten_clauses_containing_literal(literal=literal)
 
@@ -39,6 +41,7 @@ def dpll_2(rules: Rules, literal: str) -> bool:
         return True
     if rules.contains_empty_clauses():
         return False
+
 
     # DO UNIT RULE
     unit_rule_literals = rules.unit_rule()
@@ -57,11 +60,8 @@ def dpll_2(rules: Rules, literal: str) -> bool:
 
     if not rules.contains_clauses():
         true_literals.append(literal)
-        #print("SULUTION FOUND")
         return True
     if rules.contains_empty_clauses():
-        #print("RETURN FALSE IN EMPTY CLAUSE")
-        # TODO: REMOVE fRoM TRUE unit
         for lit in unit_rule_literals:
             if '-' not in lit:
                 true_literals.remove(lit)
@@ -108,7 +108,7 @@ solution = list(true_true_literals) + sudoku
 #print(solution)
 #print(len(solution))
 print(result)
-"""
+
 s = int(max(solution)[0])
 size = (s, s)
 matrix = np.zeros(size)
@@ -119,5 +119,7 @@ for sol in solution:
     num = int(sol[2])
     matrix[row][col] = num
 
+matrix = matrix.astype(int)
 print(matrix)
-"""
+
+plot_sudoku(matrix)

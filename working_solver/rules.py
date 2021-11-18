@@ -62,6 +62,7 @@ class Rules:
                 return True
         return False
 
+
     def unit_rule(self):
         literals = set()
         for clause in self._clauses:
