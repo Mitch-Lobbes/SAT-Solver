@@ -12,9 +12,10 @@ from helper import negate_literal, plot_sudoku
 
 #SUDOKU_RULES_FILEPATH = "sudoku-rules-4x4.txt"
 #SUDOKU_EXAMPLE_FILEPATH = "sudoku-example4.txt"
+from sat_solver import SATSolver
 
-SUDOKU_RULES_FILEPATH = "sudoku-rules.txt"
-SUDOKU_EXAMPLE_FILEPATH = "sudoku-example.txt"
+SUDOKU_RULES_FILEPATH = "rules/sudoku-rules-9x9.txt"
+SUDOKU_EXAMPLE_FILEPATH = "example_sudokus/sudoku-example.txt"
 
 
 def read_example(filepath: str):
@@ -23,87 +24,13 @@ def read_example(filepath: str):
         return [clause[:-3] for clause in lines]
 
 
-idx = 0
-true_literals = []
-literals_added = []
-
-
-def dpll_2(rules: Rules, literal: str) -> bool:
-    global idx
-    global true_literals
-    print(f"-- New DPLL idx: {idx}")
-    idx = idx + 1
-
-    rules.remove_or_shorten_clauses_containing_literal(literal=literal)
-
-    if not rules.contains_clauses():
-        true_literals.append(literal)
-        return True
-    if rules.contains_empty_clauses():
-        return False
-
-
-    # DO UNIT RULE
-    unit_rule_literals = rules.unit_rule()
-    for lit in unit_rule_literals:
-        rules.remove_or_shorten_clauses_containing_literal(literal=lit)
-
-        if lit in rules._literals:
-            rules._literals.remove(lit)
-
-        neg = literal[1:] if '-' in literal else f'-{literal}'
-        if neg in rules._literals:
-            rules._literals.remove(neg)
-        if '-' not in lit:
-            pass
-            true_literals.append(lit)
-
-    if not rules.contains_clauses():
-        true_literals.append(literal)
-        return True
-    if rules.contains_empty_clauses():
-        for lit in unit_rule_literals:
-            if '-' not in lit:
-                true_literals.remove(lit)
-        return False
-
-    rules.jerslow_wang_heuristic()
-
-    next_literal = rules.get_literal()
-    neg_next_literal = negate_literal(literal=next_literal)
-
-    if dpll_2(rules=copy.deepcopy(rules), literal=neg_next_literal):
-        true_literals.append(neg_next_literal)
-        return True
-    temp_result = dpll_2(rules=copy.deepcopy(rules), literal=next_literal)
-    if temp_result:
-        true_literals.append(next_literal)
-    else:
-        # Remove literals from solutions again
-        for lit in unit_rule_literals:
-            if '-' not in lit:
-                true_literals.remove(lit)
-        pass
-    return temp_result
-
 
 sudoku = read_example(SUDOKU_EXAMPLE_FILEPATH)
 rules = Rules(filepath=SUDOKU_RULES_FILEPATH)
 
-for literal in sudoku:
-    rules.remove_or_shorten_clauses_containing_literal(literal=literal)
+sat_solver = SATSolver()
 
-rules.jerslow_wang_heuristic()
-
-initial_literal = rules.get_literal()
-neg_initial_literal = f"-{initial_literal}" if not "-" in initial_literal else initial_literal[1:]
-result = dpll_2(rules=copy.deepcopy(rules), literal=neg_initial_literal)
-if not result:
-    result = dpll_2(rules=copy.deepcopy(rules), literal=initial_literal)
-
-true_true_literals = set([lit for lit in true_literals if "-" not in lit])
-three_three_literals = set([lit for lit in true_literals if "-" not in lit and lit.startswith("33")])
-solution = list(true_true_literals) + sudoku
+result, solution = sat_solver.solve(rules = rules, problem=sudoku)
 
 #print(solution)
 #print(len(solution))
@@ -122,4 +49,4 @@ for sol in solution:
 matrix = matrix.astype(int)
 print(matrix)
 
-plot_sudoku(matrix)
+#plot_sudoku(matrix)
