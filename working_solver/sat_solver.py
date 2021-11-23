@@ -10,7 +10,7 @@ class SATSolver:
         pass
 
     def solve(self, rules: Rules, problem: list[str]) -> (bool, list[str]):
-        print("Solving new problem")
+        #print("Solving new problem")
         self._reset()
         self._initial_simplification(rules=rules, problem=problem)
         rules.jerslow_wang_heuristic()
@@ -83,5 +83,9 @@ class SATSolver:
             for lit in unit_rule_literals:
                 if '-' not in lit:
                     self._true_literals.remove(lit)
-            pass
         return temp_result
+
+# Variable State Independent Decaying Sum
+# BCP = Boolean Constraint Propagation -> unit Rule
+# CHB = conflict history-based branching heuristic
+# UIP = Unique Implication Point
