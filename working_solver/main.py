@@ -15,7 +15,7 @@ from helper import negate_literal, plot_sudoku
 from sat_solver import SATSolver
 
 SUDOKU_RULES_FILEPATH = "rules/sudoku-rules-9x9.txt"
-SUDOKU_EXAMPLE_FILEPATH = "example_sudokus/sudoku-example.txt"
+SUDOKU_EXAMPLE_FILEPATH = "example_sudokus/sudoku-example-1.txt"
 
 
 def read_example(filepath: str):
